@@ -3,16 +3,16 @@ name: CI
 on: push
 
 env:
-  NODE_VERSION: 20.x
+  NODE_VERSION: 22.x
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ env.NODE_VERSION }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
     - name: Build & Pack
@@ -23,7 +23,7 @@ jobs:
         npm run build
         npm run pack
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: dist
         path: download-cleaner-lite.zip
@@ -35,27 +35,17 @@ jobs:
     needs: [build]
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4.1.7
+        uses: actions/download-artifact@v4
         with:
           name: dist
-      - name: Prepare release
-        id: prepare_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
+          files: download-cleaner-lite.zip
+          draft: true
+          name: ${{ github.ref }}
           tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
           body: |
             * tbd
-          draft: true
-          prerelease: false
-      - name: Upload download-cleaner-lite.zip
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.prepare_release.outputs.upload_url }}
-          asset_path: ./download-cleaner-lite.zip
-          asset_name: download-cleaner-lite.zip
-          asset_content_type: application/zip
