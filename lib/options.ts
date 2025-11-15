@@ -38,8 +38,8 @@ type Settings = typeof settings;
 async function loadSettings(changedCallback?: () => void) {
   const settingsKeys = Object.keys(settings) as [keyof Settings];
 
-  function set<K extends keyof Settings>(key: K, value: Settings[K]) {
-    settings[key] = value;
+  function set<K extends keyof Settings>(key: K, value: unknown) {
+    settings[key] = value as Settings[K];
   }
 
   function storageChanged(
@@ -52,7 +52,10 @@ async function loadSettings(changedCallback?: () => void) {
 
     for (const key of settingsKeys) {
       if (key in changes) {
-        set(key, JSON.parse(changes[key].newValue));
+        const newValue: unknown = changes[key].newValue;
+        if (typeof newValue === "string") {
+          set(key, JSON.parse(newValue));
+        }
       }
     }
 
@@ -68,7 +71,11 @@ async function loadSettings(changedCallback?: () => void) {
     if (typeof value === "string") {
       set(key, JSON.parse(value));
     } else {
-      browser.storage.local.set({ [key]: JSON.stringify(settings[key]) });
+      browser.storage.local
+        .set({ [key]: JSON.stringify(settings[key]) })
+        .catch(() => {
+          /* ignore */
+        });
     }
   }
   return result;

@@ -194,12 +194,16 @@ interface IAlarmName {
   }
 
   /** Call removal method when timer elapses */
-  async function onAlarm({ name }: IAlarmName) {
+  function onAlarm({ name }: IAlarmName) {
     if (name.startsWith("id-")) {
       // Download from current session with ID
       const downloadId = parseInt(name.substring(3), 10);
-      const downloads = await browser.downloads.search({ id: downloadId });
-      removeDownloads(downloads);
+      browser.downloads
+        .search({ id: downloadId })
+        .then((downloads) => removeDownloads(downloads))
+        .catch(() => {
+          /* ignore */
+        });
     } else if (name.startsWith("url-")) {
       // Download from previous session, only URL
       const downloadUrl = name.substring(4);
